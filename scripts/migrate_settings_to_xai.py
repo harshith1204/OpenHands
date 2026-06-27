@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-"""One-time migration of ~/.openhands/settings.json to Simpo xAI defaults.
+"""One-time migration of ~/.openhands/settings.json to xAI defaults.
 
-Applies the same rules as FileSettingsStore load-time migration. Useful when
-a Docker volume has stale settings before redeploy.
+Applies the same rules as FileSettingsStore load-time migration.
 """
 
 from __future__ import annotations
@@ -17,10 +16,9 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from openhands.app_server.settings.simpo_settings_migration import (
-    migrate_settings_kwargs_for_simpo_xai,
+from openhands.app_server.settings.xai_settings_migration import (  # noqa: E402
+    migrate_settings_kwargs_for_xai,
 )
-from openhands.app_server.utils.simpo_llm_config import is_simpo_xai_only_mode
 
 
 def _default_settings_path() -> Path:
@@ -81,13 +79,6 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    if not is_simpo_xai_only_mode():
-        print(
-            'OH_LLM_PROVIDER_ALLOWLIST must be set to "xai" for migration.',
-            file=sys.stderr,
-        )
-        return 1
-
     path = args.path or _default_settings_path()
     if not path.exists():
         print(f'No settings file at {path}', file=sys.stderr)
@@ -95,7 +86,7 @@ def main(argv: list[str] | None = None) -> int:
 
     raw = path.read_text(encoding='utf-8')
     before = json.loads(raw)
-    after, migrated = migrate_settings_kwargs_for_simpo_xai(before)
+    after, migrated = migrate_settings_kwargs_for_xai(before)
 
     if not migrated:
         print(f'No migration needed for {path}')

@@ -93,18 +93,16 @@ class TestToLLMModels:
         assert isinstance(models, list)
         assert all(isinstance(m, LLMModel) for m in models)
 
-    def test_models_verified_mix(self):
+    def test_all_models_are_verified(self):
         models = _to_llm_models(get_supported_llm_models())
 
-        assert any(m.verified is True for m in models)
-        assert any(m.verified is False for m in models)
-
-    def test_xai_models_are_verified(self):
-        models = _to_llm_models(get_supported_llm_models())
+        assert models
+        assert all(m.verified for m in models)
         xai_models = [m for m in models if m.provider == 'xai']
-
         assert any(m.name == 'grok-4.3' for m in xai_models)
-        assert all(m.verified for m in xai_models if m.name in {'grok-4.3', 'grok-build-0.1'})
+        assert all(
+            m.verified for m in xai_models if m.name in {'grok-4.3', 'grok-build-0.1'}
+        )
 
     def test_xai_provider_is_verified(self):
         providers = _to_providers(get_supported_llm_models())
@@ -129,29 +127,12 @@ class TestToProviders:
 
         assert len(names) == len(set(names))
 
-    def test_verified_providers_sorted_first(self):
-        providers = _to_providers(get_supported_llm_models())
-        # Find the boundary between verified and unverified
-        found_unverified = False
-        for p in providers:
-            if not p.verified:
-                found_unverified = True
-            if found_unverified and p.verified:
-                pytest.fail('Verified provider found after unverified provider')
-
-    def test_openhands_provider_appears_first(self):
-        """The ``openhands`` managed provider must always be first in the list."""
+    def test_only_xai_provider(self):
         providers = _to_providers(get_supported_llm_models())
 
-        assert providers, 'expected at least one provider'
-        assert providers[0].name == 'openhands'
+        assert len(providers) == 1
+        assert providers[0].name == 'xai'
         assert providers[0].verified is True
-
-    def test_contains_verified_and_unverified(self):
-        providers = _to_providers(get_supported_llm_models())
-
-        assert any(p.verified for p in providers)
-        assert any(not p.verified for p in providers)
 
 
 @pytest.fixture
@@ -339,13 +320,8 @@ class TestSearchProvidersEndpoint:
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
-class TestSimpoXaiOnlyDiscovery:
-    """Model discovery when OH_LLM_PROVIDER_ALLOWLIST=xai."""
-
-    @pytest.fixture(autouse=True)
-    def simpo_xai_env(self, monkeypatch):
-        monkeypatch.setenv('OH_LLM_PROVIDER_ALLOWLIST', 'xai')
-        monkeypatch.setenv('OH_DEFAULT_LLM_MODEL', 'xai/grok-4.3')
+class TestXaiOnlyDiscovery:
+    """Model discovery is xAI-only in this deployment."""
 
     def test_get_supported_llm_models_returns_xai_only(self):
         response = get_supported_llm_models()
@@ -354,10 +330,3 @@ class TestSimpoXaiOnlyDiscovery:
         assert response.verified_providers == ['xai']
         assert response.default_model == 'xai/grok-4.3'
         assert 'openhands/' not in ' '.join(response.models)
-
-    def test_to_providers_puts_xai_first(self):
-        providers = _to_providers(get_supported_llm_models())
-
-        assert len(providers) == 1
-        assert providers[0].name == 'xai'
-        assert providers[0].verified is True

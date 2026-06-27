@@ -36,4 +36,4 @@ After the plan is generated, please ask the user if they are ready to generate t
 
 Additional guidelines:
 - Users can configure their LLM API Key using an environment variable named "LLM_API_KEY"
-- Unless otherwise specified, default to this model: openhands/claude-sonnet-4-20250514. This is configurable through the LLM_BASE_MODEL environment variable.
+- Unless otherwise specified, default to this model: xai/grok-4.3. This is configurable through the LLM_BASE_MODEL environment variable.

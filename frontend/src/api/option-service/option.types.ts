@@ -73,5 +73,4 @@ export interface WebClientConfig {
   provider_default_hosts?: Partial<Record<Provider, string>>;
   slack_enabled?: boolean;
   acp_providers?: ACPProviderConfig[];
-  llm_provider_allowlist?: string[] | null;
 }

@@ -14,7 +14,6 @@ from openhands.app_server.web_client.web_client_models import (
     WebClientConfig,
     WebClientFeatureFlags,
 )
-from openhands.app_server.utils.simpo_llm_config import get_llm_provider_allowlist
 from openhands.sdk.settings import ACP_PROVIDERS
 
 
@@ -206,6 +205,5 @@ class DefaultWebClientConfigInjector(WebClientConfigInjector):
             provider_default_hosts=self.provider_default_hosts,
             slack_enabled=self.slack_enabled,
             acp_providers=self.acp_providers,
-            llm_provider_allowlist=get_llm_provider_allowlist(),
         )
         return result

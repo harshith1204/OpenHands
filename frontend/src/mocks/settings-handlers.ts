@@ -151,6 +151,25 @@ const MOCK_AGENT_SETTINGS_SCHEMA: NonNullable<
           required: false,
         },
         {
+          key: "llm.reasoning_effort",
+          label: "Reasoning effort",
+          description: "Controls how much reasoning the model applies.",
+          section: "llm",
+          section_label: "LLM",
+          value_type: "string",
+          default: "low",
+          choices: [
+            { label: "none", value: "none" },
+            { label: "low", value: "low" },
+            { label: "medium", value: "medium" },
+            { label: "high", value: "high" },
+          ],
+          depends_on: [],
+          prominence: "critical",
+          secret: false,
+          required: false,
+        },
+        {
           key: "llm.temperature",
           label: "Temperature",
           description: "Adjust randomness for non-deterministic model outputs.",
@@ -393,7 +412,7 @@ export const resetTestHandlersMockSettings = () => {
   MOCK_USER_PREFERENCES.settings = structuredClone(MOCK_DEFAULT_USER_SETTINGS);
 };
 
-// Mock model data used by both V0 and V1 endpoints (Simpo xAI-only deployment)
+// Mock model data used by both V0 and V1 endpoints (xAI-only deployment)
 const MOCK_MODELS = ["xai/grok-4.3", "xai/grok-build-0.1"];
 
 const MOCK_VERIFIED_MODELS = new Set(["xai/grok-4.3", "xai/grok-build-0.1"]);

@@ -30,24 +30,10 @@ from openhands.app_server.utils.llm import (
     get_supported_llm_models,
 )
 from openhands.app_server.utils.paging_utils import paginate_results
-from openhands.app_server.utils.simpo_llm_config import get_llm_provider_allowlist
-from openhands.sdk.llm.utils.verified_models import VERIFIED_MODELS
 
 _logger = logging.getLogger(__name__)
 
-_VERIFIED_MODEL_SET: set[str] = {
-    f'{provider}/{name}'
-    for provider, models in VERIFIED_MODELS.items()
-    for name in models
-} | set(XAI_MODELS)
-
-
-def _active_verified_model_set() -> set[str]:
-    allowlist = get_llm_provider_allowlist()
-    if allowlist is not None:
-        allowed = set(allowlist)
-        return {model for model in XAI_MODELS if model.split('/', 1)[0] in allowed}
-    return _VERIFIED_MODEL_SET
+_VERIFIED_MODEL_SET: set[str] = set(XAI_MODELS)
 
 
 def _to_llm_models(
@@ -88,7 +74,7 @@ def _to_llm_models(
                 verified=(
                     is_verified(model_name, name, models_response)
                     if is_verified is not None
-                    else model_name in _active_verified_model_set()
+                    else model_name in _VERIFIED_MODEL_SET
                 ),
                 hidden=hidden,
                 canonical=canonical,
@@ -98,12 +84,7 @@ def _to_llm_models(
 
 
 def _to_providers(models_response: ModelsResponse) -> list[Provider]:
-    """Extract unique providers, sorted with the primary verified provider first,
-    then other verified providers alphabetically, then unverified providers.
-    """
-    allowlist = get_llm_provider_allowlist()
-    primary_provider = allowlist[0] if allowlist else 'openhands'
-
+    """Extract unique providers from the xAI-only model list."""
     verified_set = set(models_response.verified_providers)
     seen: set[str] = set()
     providers: list[Provider] = []
@@ -115,9 +96,6 @@ def _to_providers(models_response: ModelsResponse) -> list[Provider]:
         if name not in seen:
             seen.add(name)
             providers.append(Provider(name=name, verified=name in verified_set))
-    providers.sort(
-        key=lambda p: (not p.verified, p.name != primary_provider, p.name)
-    )
     return providers
 
 
@@ -197,7 +175,7 @@ class DefaultLLMModelService(LLMModelService):
     ) -> bool:
         """Whether a model is shown as "verified". Default is the static SDK
         catalogue; subclasses (e.g. the managed proxy) override this."""
-        return model_name in _active_verified_model_set()
+        return model_name in _VERIFIED_MODEL_SET
 
     # ------------------------------------------------------------------
     # LLMModelService interface

@@ -56,6 +56,15 @@ LITE_LLM_API_URL = os.environ.get(
     'LITE_LLM_API_URL', 'https://llm-proxy.app.all-hands.dev'
 )
 
+XAI_LLM_SCHEMA_FIELD_ALLOWLIST = frozenset({
+    'llm.model',
+    'llm.api_key',
+    'llm.reasoning_effort',
+    'llm.temperature',
+    'llm.top_p',
+    'llm.max_output_tokens',
+})
+
 # Create router with /api/v1/settings prefix
 router = APIRouter(
     prefix='/settings',
@@ -74,11 +83,42 @@ def _post_merge_llm_fixups(settings: Settings) -> None:
     if not isinstance(settings.agent_settings, OpenHandsAgentSettings):
         return
     llm = settings.agent_settings.llm
+    model = llm.model or ''
+    if model.startswith('xai/'):
+        return
     llm.base_url = resolve_llm_base_url(
         model=llm.model,
         base_url=llm.base_url,
         managed_proxy_url=LITE_LLM_API_URL,
     )
+
+
+def _filter_agent_settings_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    """Return agent settings schema with only xAI-relevant LLM fields."""
+    sections = schema.get('sections')
+    if not isinstance(sections, list):
+        return schema
+
+    filtered_sections: list[dict[str, Any]] = []
+    for section in sections:
+        if not isinstance(section, dict):
+            continue
+        if section.get('key') != 'llm':
+            filtered_sections.append(section)
+            continue
+        fields = section.get('fields')
+        if not isinstance(fields, list):
+            filtered_sections.append(section)
+            continue
+        filtered_fields = [
+            field
+            for field in fields
+            if isinstance(field, dict)
+            and field.get('key') in XAI_LLM_SCHEMA_FIELD_ALLOWLIST
+        ]
+        filtered_sections.append({**section, 'fields': filtered_fields})
+
+    return {**schema, 'sections': filtered_sections}
 
 
 # NOTE: We use response_model=None for endpoints that return JSONResponse directly.
@@ -267,7 +307,8 @@ async def store_settings(
 @router.get('/agent-schema')
 async def load_settings_schema() -> dict[str, Any]:
     """Load the schema for settings"""
-    return export_agent_settings_schema().model_dump(mode='json')
+    schema = export_agent_settings_schema().model_dump(mode='json')
+    return _filter_agent_settings_schema(schema)
 
 
 @router.get('/conversation-schema')

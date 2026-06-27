@@ -17,11 +17,6 @@ export const PROFILE_NAME_PATTERN = /^[A-Za-z0-9._-]{1,64}$/;
  * rather than falling back to a generic placeholder name.
  */
 export function deriveProfileNameFromModel(model: string): string | null {
-  const trimmed = model.trim();
-  if (trimmed === "xai/grok-4.3" || trimmed === "grok-4.3") {
-    return "Simpo xAI";
-  }
-
   // "/" is the canonical provider separator; mapping it to "_" keeps the
   // human-readable boundary without running afoul of the backend regex.
   const sanitized = model

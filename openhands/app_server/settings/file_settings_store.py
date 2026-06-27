@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from openhands.app_server.file_store.files import FileStore
 from openhands.app_server.settings.settings_models import Settings
 from openhands.app_server.settings.settings_store import SettingsStore
-from openhands.app_server.settings.simpo_settings_migration import (
-    migrate_settings_kwargs_for_simpo_xai,
+from openhands.app_server.settings.xai_settings_migration import (
+    migrate_settings_kwargs_for_xai,
 )
 from openhands.app_server.utils.async_utils import call_sync_from_async
 
@@ -32,7 +32,7 @@ class FileSettingsStore(SettingsStore):
                         'active': 'Default',
                     }
 
-            kwargs, migrated = migrate_settings_kwargs_for_simpo_xai(kwargs)
+            kwargs, migrated = migrate_settings_kwargs_for_xai(kwargs)
             settings = Settings(**kwargs)
 
             # Turn on V1 in OpenHands

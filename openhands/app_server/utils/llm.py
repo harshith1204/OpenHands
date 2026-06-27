@@ -8,10 +8,7 @@ with warnings.catch_warnings():
     from litellm import LlmProviders, ProviderConfigManager, get_llm_provider
 
 from openhands.app_server.utils.logger import openhands_logger as logger
-from openhands.app_server.utils.simpo_llm_config import (
-    get_default_llm_model,
-    get_llm_provider_allowlist,
-)
+from openhands.app_server.utils.deployment_llm_config import get_default_llm_model
 
 # ---------------------------------------------------------------------------
 # The ``openhands-sdk`` package is the **single source of truth** for which
@@ -271,68 +268,17 @@ def get_supported_llm_models(
     verified_models: list[str] | None = None,
     extra_models: list[str] | None = None,
 ) -> ModelsResponse:
-    """Collect every model available to this server and return structured data.
-
-    The returned ``ModelsResponse`` contains:
-
-    * a flat list of ``provider/model`` strings (bare LiteLLM names are
-      prefixed with the correct provider),
-    * a list of *verified* model names (the OpenHands-curated subset),
-    * the set of verified providers, and
-    * the recommended default model.
-
-    Args:
-        verified_models: Optional list of ``"openhands/<name>"`` strings
-            from the database (SaaS mode).  When provided these replace the
-            hardcoded ``OPENHANDS_MODELS``.
-        extra_models: Optional list of additional model names to include
-            (e.g. from Bedrock or Ollama discovery).
-    """
-    allowlist = get_llm_provider_allowlist()
+    """Return xAI models available to this deployment."""
+    _ = verified_models, extra_models  # hard fork: discovery is xAI-only
     default_model = get_default_llm_model()
-
-    if allowlist is not None:
-        allowed = set(allowlist)
-        unique_models = sorted(
-            model for model in XAI_MODELS if model.split('/', 1)[0] in allowed
-        )
-        if not unique_models and 'xai' in allowed:
-            unique_models = sorted(XAI_MODELS)
-
-        return ModelsResponse(
-            models=unique_models,
-            verified_models=[
-                m.removeprefix('xai/')
-                for m in unique_models
-                if m.startswith('xai/')
-            ],
-            verified_providers=sorted(allowed),
-            default_model=default_model,
-        )
-
-    litellm_model_list = litellm.model_list + list(litellm.model_cost.keys())
-    model_list = remove_error_modelId(litellm_model_list)
-
-    if extra_models:
-        model_list = model_list + extra_models
-
-    openhands_models = get_openhands_models(verified_models)
-
-    # Assign canonical provider prefixes to bare LiteLLM names, then dedupe.
-    all_models = (
-        openhands_models
-        + CLARIFAI_MODELS
-        + XAI_MODELS
-        + [_assign_provider(m) for m in model_list]
-    )
-    unique_models = sorted(set(all_models))
-
-    verified_providers = sorted(set(VERIFIED_PROVIDERS + ['xai']))
+    unique_models = sorted(XAI_MODELS)
 
     return ModelsResponse(
         models=unique_models,
-        verified_models=_derive_verified_models(openhands_models),
-        verified_providers=verified_providers,
+        verified_models=[
+            m.removeprefix('xai/') for m in unique_models if m.startswith('xai/')
+        ],
+        verified_providers=['xai'],
         default_model=default_model,
     )
 

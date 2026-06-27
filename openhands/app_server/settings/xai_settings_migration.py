@@ -1,17 +1,15 @@
-"""Migrate persisted settings from OpenHands managed LLM flow to Simpo xAI."""
+"""Migrate persisted settings from OpenHands managed LLM flow to xAI defaults."""
 
 from __future__ import annotations
 
 from copy import deepcopy
 from typing import Any
 
-from openhands.app_server.utils.simpo_llm_config import (
-    SIMPO_DEFAULT_LLM_MODEL,
-    SIMPO_DEFAULT_REASONING_EFFORT,
-    SIMPO_LLM_PROFILE_NAME,
+from openhands.app_server.utils.deployment_llm_config import (
+    DEFAULT_LLM_MODEL,
+    DEFAULT_LLM_PROFILE_NAME,
     get_default_llm_model,
     get_default_reasoning_effort,
-    is_simpo_xai_only_mode,
 )
 
 
@@ -38,16 +36,13 @@ def _normalize_llm_dict(llm: dict[str, Any]) -> tuple[dict[str, Any], bool]:
     return migrated, changed
 
 
-def migrate_settings_kwargs_for_simpo_xai(
+def migrate_settings_kwargs_for_xai(
     kwargs: dict[str, Any],
 ) -> tuple[dict[str, Any], bool]:
-    """Migrate raw settings JSON toward Simpo xAI defaults when enabled.
+    """Migrate raw settings JSON toward xAI defaults.
 
     Returns the (possibly updated) kwargs dict and whether any migration ran.
     """
-    if not is_simpo_xai_only_mode():
-        return kwargs, False
-
     migrated = deepcopy(kwargs)
     changed = False
 
@@ -90,12 +85,14 @@ def migrate_settings_kwargs_for_simpo_xai(
     )
 
     if needs_profile_rewrite:
-        profiles = {SIMPO_LLM_PROFILE_NAME: deepcopy(migrated_llm)}
-        active = SIMPO_LLM_PROFILE_NAME
+        profiles = {DEFAULT_LLM_PROFILE_NAME: deepcopy(migrated_llm)}
+        active = DEFAULT_LLM_PROFILE_NAME
         changed = True
     elif active not in profiles:
-        active = SIMPO_LLM_PROFILE_NAME if SIMPO_LLM_PROFILE_NAME in profiles else next(
-            iter(profiles), SIMPO_LLM_PROFILE_NAME
+        active = (
+            DEFAULT_LLM_PROFILE_NAME
+            if DEFAULT_LLM_PROFILE_NAME in profiles
+            else next(iter(profiles), DEFAULT_LLM_PROFILE_NAME)
         )
         changed = True
 
@@ -104,9 +101,8 @@ def migrate_settings_kwargs_for_simpo_xai(
         'active': active,
     }
 
-    # Keep top-level llm_model in sync for any legacy readers.
     if migrated.get('llm_model') != migrated_llm.get('model'):
-        migrated['llm_model'] = migrated_llm.get('model', SIMPO_DEFAULT_LLM_MODEL)
+        migrated['llm_model'] = migrated_llm.get('model', DEFAULT_LLM_MODEL)
         changed = True
 
     return migrated, changed

@@ -95,6 +95,14 @@ export function formatLlmModel(raw: string): string {
     return `Gemini ${ver} ${tailWords}`;
   }
 
+  // xAI Grok models
+  if (lower === "grok-4.3") return "Grok 4.3";
+  if (lower === "grok-build-0.1") return "Grok Build 0.1";
+  if (lower.startsWith("grok-")) {
+    const tail = lower.replace(/^grok-/, "").replace(/-/g, " ");
+    return `Grok ${tail}`;
+  }
+
   // Unknown — return the prefix-stripped form so the chip stays readable.
   return noDate;
 }

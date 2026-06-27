@@ -63,4 +63,3 @@ class WebClientConfig(DiscriminatedUnionMixin):
     provider_default_hosts: dict[str, str] = Field(default_factory=dict)
     slack_enabled: bool = False
     acp_providers: list[ACPProviderConfig] = Field(default_factory=list)
-    llm_provider_allowlist: list[str] | None = None

@@ -152,10 +152,9 @@ async def test_load_skips_seeding_when_no_legacy_model(file_settings_store):
 
 
 @pytest.mark.asyncio
-async def test_load_migrates_openhands_settings_when_simpo_xai_mode(
-    file_settings_store, monkeypatch
+async def test_load_migrates_openhands_settings_to_xai_defaults(
+    file_settings_store,
 ):
-    monkeypatch.setenv('OH_LLM_PROVIDER_ALLOWLIST', 'xai')
     legacy_payload = {
         'llm_model': 'openhands/claude-opus-4-5-20251101',
         'agent_settings': {
@@ -175,8 +174,8 @@ async def test_load_migrates_openhands_settings_when_simpo_xai_mode(
     assert loaded is not None
     assert loaded.agent_settings.llm.model == 'xai/grok-4.3'
     assert loaded.agent_settings.llm.reasoning_effort == 'low'
-    assert loaded.llm_profiles.active == 'Simpo xAI'
-    assert 'Simpo xAI' in loaded.llm_profiles.profiles
+    assert loaded.llm_profiles.active == 'Default'
+    assert 'Default' in loaded.llm_profiles.profiles
     file_settings_store.file_store.write.assert_called_once()
 
 

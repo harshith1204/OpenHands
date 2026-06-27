@@ -8,6 +8,8 @@ from typing import Any
 from openhands.app_server.utils.deployment_llm_config import (
     DEFAULT_LLM_MODEL,
     DEFAULT_LLM_PROFILE_NAME,
+    get_default_llm_api_key,
+    get_default_llm_base_url,
     get_default_llm_model,
     get_default_reasoning_effort,
 )
@@ -32,6 +34,19 @@ def _normalize_llm_dict(llm: dict[str, Any]) -> tuple[dict[str, Any], bool]:
     if not migrated.get('reasoning_effort'):
         migrated['reasoning_effort'] = get_default_reasoning_effort()
         changed = True
+
+    api_key = get_default_llm_api_key()
+    if api_key is not None and migrated.get('api_key') != api_key:
+        migrated['api_key'] = api_key
+        changed = True
+
+    base_url = get_default_llm_base_url()
+    # Deployment-provided credentials/base URL take precedence over any
+    # previously persisted LiteLLM proxy settings.
+    if api_key is not None or base_url is not None:
+        if migrated.get('base_url') != base_url:
+            migrated['base_url'] = base_url
+            changed = True
 
     return migrated, changed
 
@@ -88,7 +103,16 @@ def migrate_settings_kwargs_for_xai(
         profiles = {DEFAULT_LLM_PROFILE_NAME: deepcopy(migrated_llm)}
         active = DEFAULT_LLM_PROFILE_NAME
         changed = True
-    elif active not in profiles:
+    else:
+        for name, profile in list(profiles.items()):
+            if not isinstance(profile, dict):
+                continue
+            normalized_profile, profile_changed = _normalize_llm_dict(profile)
+            if profile_changed:
+                profiles[name] = normalized_profile
+                changed = True
+
+    if active not in profiles:
         active = (
             DEFAULT_LLM_PROFILE_NAME
             if DEFAULT_LLM_PROFILE_NAME in profiles

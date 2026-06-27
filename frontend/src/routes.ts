@@ -1,0 +1,30 @@
+import {
+  type RouteConfig,
+  layout,
+  index,
+  route,
+} from "@react-router/dev/routes";
+
+export default [
+  layout("routes/root-layout.tsx", [
+    index("routes/home.tsx"),
+    route("accept-tos", "routes/accept-tos.tsx"),
+    route("launch", "routes/launch.tsx"),
+    route("settings", "routes/settings.tsx", [
+      index("routes/llm-settings.tsx"),
+      route("agent", "routes/agent-settings.tsx"),
+      route("condenser", "routes/condenser-settings.tsx"),
+      route("verification", "routes/verification-settings.tsx"),
+      route("mcp", "routes/mcp-settings.tsx"),
+      route("skills", "routes/skills-settings.tsx"),
+      route("integrations", "routes/git-settings.tsx"),
+      route("app", "routes/app-settings.tsx"),
+      route("secrets", "routes/secrets-settings.tsx"),
+    ]),
+    route("conversations/:conversationId", "routes/conversation.tsx"),
+  ]),
+  route(
+    "shared/conversations/:conversationId",
+    "routes/shared-conversation.tsx",
+  ),
+] satisfies RouteConfig;

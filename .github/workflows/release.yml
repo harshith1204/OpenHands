@@ -1,0 +1,22 @@
+name: release
+
+# app (X.Y.Z) release line.
+#
+# BOOTSTRAP: both configs set a top-level `last-release-sha` to bound the first
+# release's notes (the existing tags aren't reachable from main). Delete those
+# lines once each line's first release PR has merged — they cap every run, not
+# just the first.
+on:
+  push:
+    branches:
+      - main
+      - 'release/**'
+
+jobs:
+  openhands-app:
+    permissions:
+      contents: write
+      pull-requests: write
+    secrets: inherit
+    uses: OpenHands/release-actions/.github/workflows/release-please.yml@main
+
